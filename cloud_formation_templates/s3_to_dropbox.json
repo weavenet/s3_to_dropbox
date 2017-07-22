@@ -1,0 +1,138 @@
+{
+  "Description": "Create S3 Bucket and Lambda function to copy files to Dropbox triggered by S3 Event.", 
+  "Parameters": {
+    "DropboxTokenAccess": {
+      "Type": "String",
+      "Description": "Dropbox OAuth2 Token",
+      "NoEcho": true
+    }
+  },
+  "Resources": {
+    "Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "DependsOn": [
+        "Func"
+      ],
+      "Properties": {
+        "NotificationConfiguration": {
+          "LambdaConfigurations": [
+            {
+              "Function": {
+                "Fn::GetAtt": [
+                  "Func",
+                  "Arn"
+                ]
+              },
+              "Event": "s3:ObjectCreated:Put"
+            }
+          ]
+        }
+      }
+    },
+    "IAMRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "Path": "/",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            },
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "s3.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "s3_to_dropbox",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:*"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*"
+                },
+                {
+                  "Action": [
+                    "lambda:InvokeFunction"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "arn:aws:lambda:*:*:*"
+                },
+                {
+                  "Action": [
+                    "s3:GetObject"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "S3LambdaExecutePermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "Func",
+            "Arn"
+          ]
+        },
+        "Principal": "s3.amazonaws.com"
+      }
+    },
+    "Func": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": "s3_to_dropbox",
+        "Handler": "index.handler",
+        "Environment": {
+          "Variables": {
+            "DROPBOX_ACCESS_TOKEN": {
+              "Ref": "DropboxTokenAccess"
+            }
+          }
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "IAMRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile": {
+            "Fn::Join": [
+              "\n",
+              [
+                "#!/usr/bin/env/python",
+                "def handler(event, context):",
+                "    print 'update me!'",
+                "    return 'update me!'"
+              ]
+            ]
+          }
+        },
+        "Runtime": "python2.7",
+        "Timeout": "180"
+      }
+    }
+  }
+}
