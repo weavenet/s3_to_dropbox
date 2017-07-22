@@ -15,7 +15,7 @@ will trigger a S3 Event, to execute a Lambda, which will copy the files to Dropb
 
 * Create a [Dropbox app and oauth token](https://blogs.dropbox.com/developers/2014/05/generate-an-access-token-for-your-own-account/).
 
-* Create Cloud Formation Stack from **cloud_formation_templates/lambda.json** and provide the 
+* Create Cloud Formation Stack from **cloud_formation_templates/s3_to_dropbox.json** and provide the 
 token created above as the **DropboxTokenAccess** parameter.
 
 ### Deploy Updated Code To Lambda Function
